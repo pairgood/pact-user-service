@@ -18,6 +18,10 @@ spring:
     console:
       enabled: true
 
+jwt:
+  secret: productionSecretKeyThatIsAtLeast512BitsLongForHS512AlgorithmAndShouldBeSecurelyGeneratedInProductionEnvironment
+  expiration: 86400000
+
 telemetry:
   service:
     url: http://localhost:8086
