@@ -140,8 +140,8 @@ public class UserTest {
         // Then
         assertThat(toString).contains("User");
         assertThat(toString).contains("id=1");
-        assertThat(toString).contains("username=testuser");
-        assertThat(toString).contains("email=test@example.com");
+        assertThat(toString).contains("username='testuser'");
+        assertThat(toString).contains("email='test@example.com'");
     }
 
     @Test

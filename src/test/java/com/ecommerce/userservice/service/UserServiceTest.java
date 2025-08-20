@@ -54,7 +54,8 @@ public class UserServiceTest {
 
         // Set up JWT secret key
         secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
-        ReflectionTestUtils.setField(userService, "jwtSecret", secretKey.getEncoded());
+        String base64Key = "base64:" + java.util.Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        ReflectionTestUtils.setField(userService, "jwtSecret", base64Key);
         ReflectionTestUtils.setField(userService, "jwtExpirationMs", 86400000); // 24 hours
     }
 

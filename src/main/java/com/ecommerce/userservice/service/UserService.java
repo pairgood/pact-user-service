@@ -6,10 +6,12 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
@@ -19,8 +21,14 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
     
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    
+    @Value("${jwt.secret:defaultSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}")
+    private String jwtSecret;
+    
+    @Value("${jwt.expiration:86400000}")
+    private int jwtExpirationMs;
     
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -59,8 +67,11 @@ public class UserService {
     
     public boolean validateToken(String token) {
         try {
+            if (token == null || token.trim().isEmpty()) {
+                return false;
+            }
             Jwts.parserBuilder()
-                .setSigningKey(secretKey)
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token);
             return true;
@@ -74,8 +85,18 @@ public class UserService {
             .setSubject(user.getUsername())
             .claim("userId", user.getId())
             .setIssuedAt(new Date())
-            .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 24 hours
-            .signWith(secretKey)
+            .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+            .signWith(getSigningKey(), SignatureAlgorithm.HS512)
             .compact();
+    }
+    
+    private SecretKey getSigningKey() {
+        byte[] keyBytes;
+        if (jwtSecret.startsWith("base64:")) {
+            keyBytes = Base64.getDecoder().decode(jwtSecret.substring(7));
+        } else {
+            keyBytes = jwtSecret.getBytes();
+        }
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 }
