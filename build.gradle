@@ -36,6 +36,7 @@ dependencies {
     
     // Add Pact consumer dependencies
     testImplementation 'au.com.dius.pact.consumer:junit5:4.4.6'
+    testImplementation 'commons-codec:commons-codec:1.15'
 }
 
 
