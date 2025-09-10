@@ -122,7 +122,7 @@ The service will start on **port 8081**.
 - **Order Service**: Validates user existence during order creation
 
 ### External Dependencies
-- None (this is a producer-only service)
+- **Telemetry Service**: Sends telemetry data and trace information
 
 ## Example Usage
 
@@ -183,3 +183,139 @@ telemetry.service.url=http://localhost:8086
 - **[Payment Service](../payment-service/README.md)**: Independent service  
 - **[Notification Service](../notification-service/README.md)**: Independent service
 - **[Telemetry Service](../telemetry-service/README.md)**: Collects telemetry data from this service
+
+## Pact Contract Testing
+
+This service uses [Pact](https://pact.io/) for consumer contract testing to ensure reliable communication with external services.
+
+### Consumer Role
+
+This service acts as a consumer for the following external services:
+- **Telemetry Service**: Sends telemetry events via HTTP POST to `/api/telemetry/events`
+
+### Running Pact Tests
+
+#### Consumer Tests
+```bash
+# Run consumer tests and generate contracts
+./gradlew pactTest
+
+# Generated contracts will be in build/pacts/
+```
+
+#### Publishing Contracts
+```bash
+# Publish contracts to Pactflow
+./gradlew pactPublish
+```
+
+### Contract Testing Approach
+
+This implementation follows Pact's **"Be conservative in what you send"** principle:
+
+- Consumer tests define minimal request structures with only required fields
+- Request bodies cannot contain fields not defined in the contract
+- Tests validate that actual API calls match contract expectations exactly
+- Mock servers reject requests with unexpected extra fields
+
+### Contract Files
+
+Consumer contracts are generated in:
+- `build/pacts/` - Local contract files  
+- Pactflow - Centralized contract storage and management
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Consumer Test Failures**
+   - **Extra fields in request**: Remove any fields from request body that aren't actually needed
+   - **Mock server expectation mismatch**: Verify HTTP method, path, headers, and body structure
+   - **Content-Type headers**: Ensure request headers match exactly what the service sends
+   - **URL path parameters**: Check that path parameters are correctly formatted in the contract
+
+2. **Contract Generation Issues**
+   - **Missing @Pact annotation**: Ensure each contract method has proper annotations
+   - **Invalid JSON structure**: Verify LambdaDsl body definitions match actual data structures
+   - **Provider state setup**: Ensure provider state descriptions are descriptive and specific
+
+3. **Pactflow Integration Issues**
+   - **Authentication**: Verify `PACT_BROKER_TOKEN` environment variable is set
+   - **Base URL**: Confirm `PACT_BROKER_BASE_URL` points to `https://pairgood.pactflow.io`
+   - **Network connectivity**: Check firewall/proxy settings if publishing fails
+
+#### Debug Commands
+
+```bash
+# Run with debug output
+./gradlew pactTest --info --debug
+
+# Run specific test class
+./gradlew pactTest --tests="*TelemetryServicePactTest*"
+
+# Generate contracts without publishing
+./gradlew pactTest -x pactPublish
+
+# Clean and regenerate contracts
+./gradlew clean pactTest
+```
+
+#### Debug Logging
+
+Add to `application-test.properties` for detailed Pact logging:
+```properties
+logging.level.au.com.dius.pact=DEBUG
+logging.level.org.apache.http=DEBUG
+```
+
+### Contract Evolution
+
+When external services change their APIs:
+
+1. **New Fields in Responses**: No action needed - consumers ignore extra fields
+2. **Removed Response Fields**: Update consumer tests if those fields were being used
+3. **New Required Request Fields**: Update consumer tests and service code
+4. **Changed Endpoints**: Update consumer contract paths and service client code
+
+### Integration with CI/CD
+
+Consumer contract tests run automatically on:
+- **Pull Requests**: Generate and validate contracts
+- **Main Branch**: Publish contracts to Pactflow for provider verification
+- **Feature Branches**: Generate contracts for validation (not published)
+
+### Manual Testing
+
+For local development against real services:
+```bash
+# Test against local services (disable Pact)
+./gradlew test -Dpact.verifier.disabled=true
+
+# Test against staging services
+export EXTERNAL_SERVICE_URL=https://staging.example.com
+./gradlew test -Dpact.verifier.disabled=true
+```
+
+### Contract Documentation
+
+Generated contracts document:
+- **API interactions**: What endpoints this service calls
+- **Request formats**: Exact structure of requests sent
+- **Response expectations**: What fields this service relies on
+- **Error handling**: How this service handles different response scenarios
+
+### Implementation Status
+
+**Current Status**: Infrastructure setup complete
+- ✅ Pact dependencies added to build.gradle
+- ✅ Gradle tasks configured (pactTest, pactPublish)
+- ✅ CI/CD pipeline updated with Pact steps
+- ✅ Basic test structure in place
+
+**Next Steps**: Implement actual consumer contracts
+- 🔲 Consumer tests for TelemetryClient.startTrace()
+- 🔲 Consumer tests for TelemetryClient.finishTrace()
+- 🔲 Consumer tests for TelemetryClient.recordServiceCall()
+- 🔲 Consumer tests for TelemetryClient.logEvent()
+
+The placeholder tests are ready to be replaced with actual Pact consumer contract tests that verify the telemetry service API interactions.

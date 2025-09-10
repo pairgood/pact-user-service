@@ -22,10 +22,12 @@ Thumbs.db
 
 # Java
 *.class
-*.jar
 *.war
 *.ear
 *.log
+# Allow gradle wrapper jar (exception after general *.jar rule)
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
 
 # Spring Boot
 application-*.properties
