@@ -56,9 +56,17 @@ public class UserController {
         @ApiResponse(responseCode = "400", description = "Invalid login request data"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<String> loginUser(@RequestBody LoginRequest loginRequest) {
-        String token = userService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
-        return ResponseEntity.ok(token);
+    public ResponseEntity<String> loginUser(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
+        telemetryClient.startTrace("login_user", "POST", request.getRequestURL().toString(), null);
+        
+        try {
+            String token = userService.authenticateUser(loginRequest.getUsername(), loginRequest.getPassword());
+            telemetryClient.finishTrace("login_user", 200, null);
+            return ResponseEntity.ok(token);
+        } catch (Exception e) {
+            telemetryClient.finishTrace("login_user", 401, e.getMessage());
+            throw e;
+        }
     }
     
     @GetMapping("/{id}")
@@ -89,9 +97,17 @@ public class UserController {
         @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
         @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<User>> getAllUsers(HttpServletRequest request) {
+        telemetryClient.startTrace("get_all_users", "GET", request.getRequestURL().toString(), null);
+        
+        try {
+            List<User> users = userService.getAllUsers();
+            telemetryClient.finishTrace("get_all_users", 200, null);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            telemetryClient.finishTrace("get_all_users", 500, e.getMessage());
+            throw e;
+        }
     }
     
     @PutMapping("/{id}")
@@ -104,9 +120,17 @@ public class UserController {
     })
     public ResponseEntity<User> updateUser(
         @Parameter(description = "Unique identifier of the user to update", required = true, example = "1")
-        @PathVariable Long id, @RequestBody User user) {
-        User updatedUser = userService.updateUser(id, user);
-        return ResponseEntity.ok(updatedUser);
+        @PathVariable Long id, @RequestBody User user, HttpServletRequest request) {
+        telemetryClient.startTrace("update_user", "PUT", request.getRequestURL().toString(), id.toString());
+        
+        try {
+            User updatedUser = userService.updateUser(id, user);
+            telemetryClient.finishTrace("update_user", 200, null);
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            telemetryClient.finishTrace("update_user", 500, e.getMessage());
+            throw e;
+        }
     }
     
     @GetMapping("/validate/{token}")
@@ -118,9 +142,17 @@ public class UserController {
     })
     public ResponseEntity<Boolean> validateToken(
         @Parameter(description = "JWT token to validate", required = true, example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
-        @PathVariable String token) {
-        boolean isValid = userService.validateToken(token);
-        return ResponseEntity.ok(isValid);
+        @PathVariable String token, HttpServletRequest request) {
+        telemetryClient.startTrace("validate_token", "GET", request.getRequestURL().toString(), null);
+        
+        try {
+            boolean isValid = userService.validateToken(token);
+            telemetryClient.finishTrace("validate_token", 200, null);
+            return ResponseEntity.ok(isValid);
+        } catch (Exception e) {
+            telemetryClient.finishTrace("validate_token", 500, e.getMessage());
+            throw e;
+        }
     }
     
     public static class LoginRequest {

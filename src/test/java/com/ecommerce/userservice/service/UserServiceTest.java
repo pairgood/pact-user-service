@@ -2,6 +2,7 @@ package com.ecommerce.userservice.service;
 
 import com.ecommerce.userservice.model.User;
 import com.ecommerce.userservice.repository.UserRepository;
+import com.ecommerce.userservice.telemetry.TelemetryClient;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -35,6 +36,9 @@ public class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private TelemetryClient telemetryClient;
 
     @InjectMocks
     private UserService userService;
