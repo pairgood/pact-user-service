@@ -80,14 +80,14 @@ public class UserController {
         @Parameter(description = "Unique identifier of the user", required = true, example = "1")
         @PathVariable Long id, HttpServletRequest request) {
         String traceId = telemetryClient.startTrace("get_user", "GET", request.getRequestURL().toString(), id.toString());
-        
+
         try {
             User user = userService.getUserById(id);
             telemetryClient.finishTrace("get_user", 200, null);
             return ResponseEntity.ok(user);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             telemetryClient.finishTrace("get_user", 404, e.getMessage());
-            throw e;
+            return ResponseEntity.notFound().build();
         }
     }
     

@@ -67,9 +67,11 @@ pact {
         version = project.version ?: '1.0.0'
     }
     serviceProviders {
-        create(findProperty('spring.application.name') ?: project.name) {
+        'user-service' {
             fromPactBroker {
-                selectors = latestTags('main')
+                withSelectors {
+                    tag 'main'
+                }
                 enablePending = false
                 providerTags = ['main']
             }
